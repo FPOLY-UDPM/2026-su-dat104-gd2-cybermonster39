@@ -1,0 +1,114 @@
+---Bai1 Tìm tất cả các khách hàng mà đã đặt nhiều hơn hoặc bằng hai đơn hàng trong năm 2018.
+SELECT
+    c.customer_id,
+    c.first_name,
+    c.last_name,
+    dh.SoDonHang
+FROM sales.customers c
+JOIN
+(
+    SELECT
+        customer_id,
+        COUNT(order_id) AS SoDonHang
+    FROM sales.orders
+    WHERE YEAR(order_date) = 2018
+    GROUP BY customer_id
+    HAVING COUNT(order_id) >= 2
+) dh
+ON c.customer_id = dh.customer_id;
+
+
+---Bai2 Tìm sản phẩm bán chạy nhất năm 2017.
+--cách 1(Dùng Sum)
+SELECT
+    p.product_name,
+    sp.TongSoLuong
+FROM production.products p
+JOIN
+(
+    SELECT
+        oi.product_id,
+        SUM(oi.quantity) AS TongSoLuong
+    FROM sales.order_items oi
+    JOIN sales.orders o
+        ON oi.order_id = o.order_id
+    WHERE YEAR(o.order_date) = 2017
+    GROUP BY oi.product_id
+) sp
+ON p.product_id = sp.product_id
+WHERE sp.TongSoLuong =
+(
+    SELECT MAX(TongSoLuong)
+    FROM
+    (
+        SELECT
+            SUM(oi.quantity) AS TongSoLuong
+        FROM sales.order_items oi
+        JOIN sales.orders o
+            ON oi.order_id = o.order_id
+        WHERE YEAR(o.order_date) = 2017
+        GROUP BY oi.product_id
+    ) x
+);
+
+
+--cách 2 (Dùng Count)
+SELECT
+    p.product_name,
+    sp.SoLanDat
+FROM production.products p
+JOIN
+(
+    SELECT
+        oi.product_id,
+        COUNT(oi.product_id) AS SoLanDat
+    FROM sales.order_items oi
+    JOIN sales.orders o
+        ON oi.order_id = o.order_id
+    WHERE YEAR(o.order_date) = 2017
+    GROUP BY oi.product_id
+) sp
+ON p.product_id = sp.product_id
+WHERE sp.SoLanDat =
+(
+    SELECT MAX(SoLanDat)
+    FROM
+    (
+        SELECT
+            COUNT(oi.product_id) AS SoLanDat
+        FROM sales.order_items oi
+        JOIN sales.orders o
+            ON oi.order_id = o.order_id
+        WHERE YEAR(o.order_date) = 2017
+        GROUP BY oi.product_id
+    ) x
+);
+
+
+---Bai 3 Tìm tên cửa hàng có nhiều đơn đặt hàng nhất năm 2017. 
+SELECT
+    s.store_name,
+    dh.SoDonHang
+FROM sales.stores s
+JOIN
+(
+    SELECT
+        store_id,
+        COUNT(order_id) AS SoDonHang
+    FROM sales.orders
+    WHERE YEAR(order_date) = 2017
+    GROUP BY store_id
+) dh
+ON s.store_id = dh.store_id
+WHERE dh.SoDonHang =
+(
+    SELECT MAX(SoDonHang)
+    FROM
+    (
+        SELECT
+            COUNT(order_id) AS SoDonHang
+        FROM sales.orders
+        WHERE YEAR(order_date) = 2017
+        GROUP BY store_id
+    ) x
+);
